@@ -25,7 +25,7 @@
   <div class="sub">Full record — all fields visible</div>
 
   <div class="controls">
-    <input type="text" id="search" placeholder="Search item, description, provenance...">
+    <input type="text" id="search" placeholder="Search ID, item, description, provenance...">
     <select id="categoryFilter"><option value="">All categories</option></select>
   </div>
 
@@ -33,9 +33,10 @@
 
   <script>
     // Paste your Apps Script Web App URL here, ending in /exec
-    const SCRIPT_URL = https://script.google.com/macros/s/AKfycbyQ_t9kVFb-Joy-eyJD0317_wcMUz4KCr5m6nt4iHK6jaYVk24yg5E2dkxiQra-F_Lh/exec;
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQ_t9kVFb-Joy-eyJD0317_wcMUz4KCr5m6nt4iHK6jaYVk24yg5E2dkxiQra-F_Lh/exec';
 
     let allItems = [];
+    const urlId = (new URLSearchParams(location.search).get('id') || '').trim().toLowerCase();
 
     async function load() {
       const res = await fetch(SCRIPT_URL + '?mode=full');
@@ -59,8 +60,10 @@
       const cat = document.getElementById('categoryFilter').value;
       const filtered = allItems.filter(i => {
         const matchesCat = !cat || i.Category === cat;
-        const text = [i.Item, i.Description, i.Provenance, i.Material].join(' ').toLowerCase();
-        return matchesCat && (!q || text.includes(q));
+        const ids = Object.keys(i).filter(k => /\bid\b/i.test(k)).map(k => i[k]);
+        const text = [i.Item, i.Description, i.Provenance, i.Material, ...ids].join(' ').toLowerCase();
+        const matchesId = !urlId || ids.some(v => String(v).trim().toLowerCase() === urlId);
+        return matchesCat && matchesId && (!q || text.includes(q));
       });
 
       const el = document.getElementById('results');
